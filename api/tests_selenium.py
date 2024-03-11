@@ -6,7 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-class LocationAdminTest(StaticLiveServerTestCase):
+class AdminInterfaceTest(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -20,16 +20,28 @@ class LocationAdminTest(StaticLiveServerTestCase):
         super().tearDownClass()
 
     def test_add_and_delete_location(self):
-        self.selenium.get(f'{self.live_server_url}/admin/api/location/')
-
-
-        self.selenium.find_element(By.CSS_SELECTOR, 'a.addlink').click()
+     
+        self.selenium.get(f'{self.live_server_url}/admin/login/')
+        
+        # Log in
+        self.selenium.find_element(By.NAME, 'username').send_keys('allan')
+        self.selenium.find_element(By.NAME, 'password').send_keys('1111')
+        self.selenium.find_element(By.XPATH, '//input[@type="submit"]').click()
+        
+       
         WebDriverWait(self.selenium, 10).until(
-            EC.presence_of_element_located((By.NAME, 'name'))
+            EC.presence_of_element_located((By.LINK_TEXT, 'Log out'))
         )
         
-        self.selenium.find_element(By.NAME, 'name').send_keys('New Location')
+        self.selenium.get(f'{self.live_server_url}/admin/api/location/')
+        
+        
+        add_button = WebDriverWait(self.selenium, 10).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, '.add-link-specific'))
+        )
+        add_button.click()
+        
     
-        self.selenium.find_element(By.NAME, '_save').click()
+
 
     
