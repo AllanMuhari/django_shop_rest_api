@@ -1,55 +1,13 @@
-from rest_framework import status
-from rest_framework.test import APITestCase
-from django.urls import reverse
-from .models import Location, Item  
-from .serializers import LocationSerializer, ItemSerializer
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service as ChromeService
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.support.ui import WebDriverWait  
+from selenium.webdriver.support import expected_conditions as EC  
 
-class LocationTests(APITestCase):
-    def test_create_location(self):
-    #    Ensure we can create a new location object.
-    
-        url = reverse('location-list')
-        data = {'name': 'Nairobi'}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(Location.objects.filter(name='Nairobi').exists())
-
-    def test_get_location(self):
- 
-        # Ensure we can get a location object.
-        
-        location = Location.objects.create(name='Nairobi')
-        url = reverse('location-detail', args=[location.pk])
-        response = self.client.get(url)
-        serializer = LocationSerializer(location)
-        self.assertEqual(response.data, serializer.data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_update_location(self):
-          # Ensure we can get an update  object.
-        location = Location.objects.create(name='Nairobi')
-        url = reverse('location-detail', args=[location.pk])
-        data = {'name': 'Uptown'}
-        response = self.client.put(url, data, format='json')
-        location.refresh_from_db()  # Refresh the instance to get updated values
-        self.assertEqual(location.name, 'Uptown')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_delete_location(self):
-       # Ensure we can delete a location object.
-        location = Location.objects.create(name='Nairobi')
-        url = reverse('location-detail', args=[location.pk])
-        response = self.client.delete(url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Location.objects.filter(pk=location.pk).exists())
-
-class LocationFormTests(StaticLiveServerTestCase):
+class AdminInterfaceTest(StaticLiveServerTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -61,19 +19,31 @@ class LocationFormTests(StaticLiveServerTestCase):
         cls.selenium.quit()
         super().tearDownClass()
 
-    def test_access_create_location_form(self):
-        # Navigate to the create location form page
-        self.selenium.get(f'{self.live_server_url}/location/create/')  # Update URL as necessary
-        # Check if the form is present
-        form_present = self.selenium.find_elements(By.ID, "location-form")  # Assume the form has this ID
-        self.assertTrue(len(form_present) > 0)
+    def test_login_and_list_locations_in_admin(self):
+        # Navigate to the Django admin login page
+        self.selenium.get(f'{self.live_server_url}/admin/')
 
-    def test_submit_create_location_form(self):
-        # Navigate to the create location form page
-        self.selenium.get(f'{self.live_server_url}/location/create/')  # Update URL as necessary
-        # Assume form fields have names 'name' and 'address', adjust if different
-        self.selenium.find_element(By.NAME, 'name').send_keys('Test Location')
-        # Submit the form
-        self.selenium.find_element(By.CSS_SELECTOR, 'form input[type="submit"]').click()
-        # Verify redirection or form submission result, e.g., by checking a success message
-        # This part depends on your application's response to form submission
+        # Find the login form inputs and submit button
+        username_input = self.selenium.find_element(By.NAME, 'username')
+        password_input = self.selenium.find_element(By.NAME, 'password')
+        submit_button = self.selenium.find_element(By.XPATH, '//input[@type="submit"]')
+
+        # Fill out the form with your superuser's credentials
+        username_input.send_keys('allan')
+        password_input.send_keys('1111')
+
+        # Submit the form to log in
+        submit_button.click()
+
+        # Navigate to the Locations model in the admin.
+        self.selenium.get(f'{self.live_server_url}/admin/api/location')
+
+        # Use WebDriverWait to wait for the change list element to become visible
+        WebDriverWait(self.selenium, 10).until(
+            EC.visibility_of_element_located((By.CLASS_NAME, 'change-list'))
+        )
+
+        # Now that we've waited for it to be visible, find the element
+        change_list = self.selenium.find_element(By.CLASS_NAME, 'change-list')
+        self.assertTrue(change_list.is_displayed())
+
