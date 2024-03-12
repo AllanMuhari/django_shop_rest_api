@@ -24,16 +24,22 @@ class AdminInterfaceTest(StaticLiveServerTestCase):
         self.selenium.get(f'{self.live_server_url}/admin/login/')
         
         # Log in
-        self.selenium.find_element(By.NAME, 'username').send_keys('allan')
-        self.selenium.find_element(By.NAME, 'password').send_keys('1111')
-        self.selenium.find_element(By.XPATH, '//input[@type="submit"]').click()
+        username_input = self.selenium.find_element(By.NAME, 'username')
+        password_input = self.selenium.find_element(By.NAME, 'password')
+        submit_button = self.selenium.find_element(By.XPATH, '//input[@type="submit"]')
+
+        username_input.send_keys('allan')
+        password_input.send_keys('1111')
+
+        submit_button.click()
+
         
        
         WebDriverWait(self.selenium, 10).until(
             EC.presence_of_element_located((By.LINK_TEXT, 'Log out'))
         )
         
-        self.selenium.get(f'{self.live_server_url}/admin/api/location/')
+        self.selenium.get('http://127.0.0.1:8000/admin/api/location/')
         
         
         add_button = WebDriverWait(self.selenium, 10).until(
